@@ -216,3 +216,6 @@ class Youtube {
         }
     }
 }
+
+// export youtube class
+module.exports = Youtube;
