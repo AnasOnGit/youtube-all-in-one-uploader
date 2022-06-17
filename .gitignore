@@ -1,1 +1,5 @@
 /node_modules
+/videos
+.env
+test.js
+/images
