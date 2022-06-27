@@ -11,11 +11,11 @@ class Youtube {
     //setup puppteer
     async load(options) {
         try {
-            this.browser = await puppeteer.launch({ headless: false });
+            this.browser = await puppeteer.launch(options);
             this.page = await this.browser.newPage();
             await this.page.setDefaultNavigationTimeout(0);
         } catch (err) {
-            console.log(err);
+            throw new Error("Failed to open the browser!");
         }
     }
     constructor(options) {}
@@ -99,25 +99,25 @@ class Youtube {
         } catch (err) {
             console.log(err);
         }
-        console.log("complerted");
+        // console.log("complerted");
     }
     async uploadSingleVideo(video) {
         // const new_page = await this.browser.newPage();
         const new_page = await this.page;
 
         await new_page.setDefaultNavigationTimeout(10000);
-        // const selectBtnPath = "#select-files-button";
+
         const selectBtnPath = "input[name='Filedata']";
 
         const createBtn = "#create-icon";
         const createBtnUploadBtn = "#text-item-0";
-        // const selectBtnPath = "#content > input[type=file]";
+
         const videoVisiblityTab = "#step-title-3";
+        const nextBtnXPath =
+            "//*[normalize-space(text())='Next']/parent::*[not(@disabled)]";
+        const closeBtnXPath = `//*[@id="close-button"]/div`;
         const publishBtn = "#done-button";
-        // await new_page.goto("https://youtube.com/upload");
-        // await new_page.goto("https://studio.youtube.com/");
-        // await new_page.waitForNavigation({ waitUntil: "networkidle2" });
-        // await new_page.waitForTimeout(5000);
+
         await new_page.waitForSelector(createBtn);
         await new_page.click(createBtn);
         await new_page.waitForSelector(createBtnUploadBtn);
@@ -125,6 +125,7 @@ class Youtube {
         await new_page.waitForSelector(selectBtnPath);
         const uploadHandle = await new_page.$(selectBtnPath);
         await uploadHandle.uploadFile(video.path);
+        const uploadAsDraft = false;
         await new_page.waitForFunction(
             "document.querySelectorAll('[id=\"textbox\"]').length > 1"
         );
@@ -143,26 +144,70 @@ class Youtube {
         await textBoxes[1].focus();
         await textBoxes[1].type(video.description.substring(0, maxDescLen));
         await new_page.waitForTimeout(3000);
-        await new_page.waitForSelector(videoVisiblityTab);
-        await new_page.click(videoVisiblityTab);
-        // click on publish video option
-        // here
+        // await new_page.waitForSelector(videoVisiblityTab);
+        // await new_page.click(videoVisiblityTab);
+        await new_page.waitForXPath(nextBtnXPath);
+        let next = await new_page.$x(nextBtnXPath);
+        await next[0].click();
+        // await sleep(2000)
+        await new_page.waitForXPath(nextBtnXPath);
+        // click next button
+        next = await new_page.$x(nextBtnXPath);
+        await next[0].click();
+        await new_page.waitForXPath(nextBtnXPath);
+        // click next button
+        next = await new_page.$x(nextBtnXPath);
+        await next[0].click();
 
-        // and then publish the video
-        await new_page.waitForSelector(publishBtn);
-        await new_page.click(publishBtn);
-        await new_page.waitForTimeout(16000);
-        await new_page.waitForSelector("#close-button");
-        await new_page.waitForTimeout(16000);
-        // // *[@id="description"]
-        // await new_page.click("#close-button");
-        ////*[@id="close-button"]
-        await new_page.evaluate(() => {
-            document.querySelector("#close-button").click();
-        });
+        const selectBtnXPath = "//*[normalize-space(text())='Select files']";
+        const saveCloseBtnXPath =
+            '//*[@aria-label="Save and close"]/tp-yt-iron-icon';
+        const publishXPath =
+            "//*[normalize-space(text())='Publish']/parent::*[not(@disabled)] | //*[normalize-space(text())='Save']/parent::*[not(@disabled)]";
+        await new_page.waitForXPath(publishXPath);
+        // save youtube upload link
+        await new_page.waitForSelector('[href^="https://youtube.com"]');
+        const uploadedLinkHandle = await new_page.$(
+            '[href^="https://youtube.com"]'
+        );
+        let uploadedLink;
+        do {
+            await new_page.waitForTimeout(500);
+            uploadedLink = await new_page.evaluate(
+                (e) => e.getAttribute("href"),
+                uploadedLinkHandle
+            );
+        } while (uploadedLink === "https://youtube.com");
+        const closeDialogXPath = uploadAsDraft ? saveCloseBtnXPath : publishXPath;
+        let closeDialog;
+        for (let i = 0; i < 10; i++) {
+            try {
+                closeDialog = await new_page.$x(closeDialogXPath);
+                await closeDialog[0].click();
+                break;
+            } catch (error) {
+                await new_page.waitForTimeout(5000);
+            }
+        }
+        // await page.waitForXPath('//*[contains(text(),"Finished processing")]', { timeout: 0})
+        // no closeBtn will show up if keeps video as draft
+        if (uploadAsDraft) return uploadedLink;
+        // Wait for closebtn to show up
+        try {
+            await new_page.waitForTimeout(5000);
+            await new_page.waitForXPath(closeBtnXPath);
+            let tryClose = await new_page.$x(closeBtnXPath);
+            await tryClose[0].click();
+        } catch (e) {
+            // await browser.close();
+            throw new Error(
+                "Please make sure you set up your default video visibility correctly, you might have forgotten. More infos : https://github.com/fawazahmed0/youtube-uploader#youtube-setup"
+            );
+        }
 
         // close the page
         // await new_page.close();
+        video.onSuccuss(uploadedLink);
         return true;
     }
     async uploadCommunityPost(post) {
