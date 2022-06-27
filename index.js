@@ -15,7 +15,8 @@ class Youtube {
             this.page = await this.browser.newPage();
             await this.page.setDefaultNavigationTimeout(0);
         } catch (err) {
-            throw new Error("Failed to open the browser!");
+            console.log(err);
+            // throw new Error("Failed to open the browser!");
         }
     }
     constructor(options) {}
