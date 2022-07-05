@@ -1,6 +1,6 @@
 {
     "name": "youtube-all-in-one-uploader",
-    "version": "1.0.3",
+    "version": "1.0.5",
     "description": "Upoad videos and community post on youtube",
     "main": "index.js",
     "scripts": {
@@ -25,9 +25,13 @@
     },
     "homepage": "https://github.com/AnasOnGit/youtube-all-in-one-uploader#readme",
     "dependencies": {
-        "dotenv": "^16.0.1",
         "puppeteer": "^13.5.2",
         "puppeteer-extra": "^3.2.3",
         "puppeteer-extra-plugin-stealth": "^2.9.0"
+    },
+    "devDependencies": {
+        "dotenv": "^16.0.1",
+        "prompts": "^2.4.2",
+        "yargs": "^17.5.1"
     }
 }

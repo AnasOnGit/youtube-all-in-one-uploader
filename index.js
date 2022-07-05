@@ -178,7 +178,7 @@ class Youtube {
                 (e) => e.getAttribute("href"),
                 uploadedLinkHandle
             );
-        } while (uploadedLink === "https://youtube.com");
+        } while (uploadedLink === "https://you");
         const closeDialogXPath = uploadAsDraft ? saveCloseBtnXPath : publishXPath;
         let closeDialog;
         for (let i = 0; i < 10; i++) {
@@ -190,6 +190,7 @@ class Youtube {
                 await new_page.waitForTimeout(5000);
             }
         }
+        //*[@id="done-button"]
         // await page.waitForXPath('//*[contains(text(),"Finished processing")]', { timeout: 0})
         // no closeBtn will show up if keeps video as draft
         if (uploadAsDraft) return uploadedLink;
